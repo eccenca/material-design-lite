@@ -46,3 +46,4 @@ gulpfile.js
 
 .temp
 react-mdl.patch
+utils/

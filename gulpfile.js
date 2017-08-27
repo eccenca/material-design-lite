@@ -67,13 +67,19 @@ gulp.task('scripts', [], () => {
 // Replace mdl's string colors and unquotes with real sass colors
 gulp.task('colors', [], () => {
     return gulp.src('src/**/*.scss')
-        // replace sass unquote with the real function
+    // replace sass unquote with the real function
         .pipe($.replace(/unquote\("(.+)"\)/g, function(match, p1) {
-            return p1.replace(/#\{(.+?)\}/g, '$1');
+            const replacement = p1
+                .replace(/#{(.+?)}/, '$1')
+                .replace(/rgb\((.+)\)/, '$1');
+            console.log(`Converting ${match} -> ${replacement}`);
+            return replacement;
         }))
         // replace color strings with real sass colors
         .pipe($.replace(/"(\d{1,3},\d{1,3},\d{1,3})"/g, function(match, p1) {
-            return `rgb(${p1})`;
+            const replacement = `rgb(${p1})`
+            console.log(`Converting ${match} -> ${replacement}`);
+            return replacement;
         }))
         .pipe(gulp.dest('src'))
 });
