@@ -1,0 +1,16 @@
+
+utils/jscs-rules/
+material.js
+dist/*
+!dist/material.js
+material.min.css
+material.css
+material.min.js
+material*.map
+bower.json
+LICENSE
+*.md
+*.html
+material
+package.json
+gulpfile.babel.js
