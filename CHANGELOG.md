@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [1.3.0-beta5] 2017-08-27
 
 ### Fixed
 - Slow initiation with `upgradeAllRegistered` and `upgradeDom` by wrapping individual calls in `setTimeout`
