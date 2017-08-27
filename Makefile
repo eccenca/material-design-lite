@@ -5,7 +5,7 @@ build: yarn
 	git clean .temp -Xfd
 	cp -r .temp/* .
 	git apply react-mdl.patch
-	gulp scripts
+	node_modules/.bin/gulp
 	rm -rf .temp/*
 
 yarn:

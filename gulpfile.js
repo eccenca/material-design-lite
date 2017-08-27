@@ -53,6 +53,8 @@ const SOURCES = [
     'src/ripple/ripple.js'
 ];
 
+gulp.task('default', ['scripts', 'colors']);
+
 // Concatenate And Minify JavaScript
 gulp.task('scripts', [], () => {
     return gulp.src(SOURCES)
@@ -60,4 +62,18 @@ gulp.task('scripts', [], () => {
         .pipe($.concat('material.js'))
         .pipe($.iife({useStrict: true}))
         .pipe(gulp.dest('dist'))
+});
+
+// Replace mdl's string colors and unquotes with real sass colors
+gulp.task('colors', [], () => {
+    return gulp.src('src/**/*.scss')
+        // replace sass unquote with the real function
+        .pipe($.replace(/unquote\("(.+)"\)/g, function(match, p1) {
+            return p1;
+        }))
+        // replace color strings with real sass colors
+        .pipe($.replace(/"(\d{1,3},\d{1,3},\d{1,3})"/g, function(match, p1) {
+            return `rgb(${p1})`;
+        }))
+        .pipe(gulp.dest('src'))
 });
