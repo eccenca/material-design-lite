@@ -1,6 +1,8 @@
 ;(function() {
 "use strict";
 
+if (typeof window === 'undefined') return;
+
 /**
  * @license
  * Copyright 2015 Google Inc. All Rights Reserved.
@@ -145,6 +147,27 @@ componentHandler = (function() {
   }
 
   /**
+   * Create an event object.
+   *
+   * @param {string} eventType The type name of the event.
+   * @param {boolean} bubbles Whether the event should bubble up the DOM.
+   * @param {boolean} cancelable Whether the event can be canceled.
+   * @returns {!Event}
+   */
+  function createEvent_(eventType, bubbles, cancelable) {
+    if ('CustomEvent' in window && typeof window.CustomEvent === 'function') {
+      return new CustomEvent(eventType, {
+        bubbles: bubbles,
+        cancelable: cancelable
+      });
+    } else {
+      var ev = document.createEvent('Events');
+      ev.initEvent(eventType, bubbles, cancelable);
+      return ev;
+    }
+  }
+
+  /**
    * Searches existing DOM for elements of our component type and upgrades them
    * if they have not already been upgraded.
    *
@@ -188,6 +211,13 @@ componentHandler = (function() {
     if (!(typeof element === 'object' && element instanceof Element)) {
       throw new Error('Invalid argument provided to upgrade MDL element.');
     }
+    // Allow upgrade to be canceled by canceling emitted event.
+    var upgradingEv = createEvent_('mdl-componentupgrading', true, true);
+    element.dispatchEvent(upgradingEv);
+    if (upgradingEv.defaultPrevented) {
+      return;
+    }
+
     var upgradedList = getUpgradedListOfElement_(element);
     var classesToUpgrade = [];
     // If jsClass is not provided scan the registered components to find the
@@ -230,16 +260,8 @@ componentHandler = (function() {
           'Unable to find a registered component for the given class.');
       }
 
-      var ev;
-      if ('CustomEvent' in window && typeof window.CustomEvent === 'function') {
-        ev = new CustomEvent('mdl-componentupgraded', {
-          bubbles: true, cancelable: false
-        });
-      } else {
-        ev = document.createEvent('Events');
-        ev.initEvent('mdl-componentupgraded', true, true);
-      }
-      element.dispatchEvent(ev);
+      var upgradedEv = createEvent_('mdl-componentupgraded', true, false);
+      element.dispatchEvent(upgradedEv);
     }
   }
 
@@ -361,15 +383,7 @@ componentHandler = (function() {
       upgrades.splice(componentPlace, 1);
       component.element_.setAttribute('data-upgraded', upgrades.join(','));
 
-      var ev;
-      if ('CustomEvent' in window && typeof window.CustomEvent === 'function') {
-        ev = new CustomEvent('mdl-componentdowngraded', {
-          bubbles: true, cancelable: false
-        });
-      } else {
-        ev = document.createEvent('Events');
-        ev.initEvent('mdl-componentdowngraded', true, true);
-      }
+      var ev = createEvent_('mdl-componentdowngraded', true, false);
       component.element_.dispatchEvent(ev);
     }
   }
@@ -480,7 +494,6 @@ window.addEventListener('load', function() {
       'querySelector' in document &&
       'addEventListener' in window && Array.prototype.forEach) {
     document.documentElement.classList.add('mdl-js');
-    componentHandler.upgradeAllRegistered();
   } else {
     /**
      * Dummy function to avoid JS errors.
@@ -502,9 +515,9 @@ window.addEventListener('load', function() {
 // MIT license
 if (!Date.now) {
     /**
-   * Date.now polyfill.
-   * @return {number} the current Date
-   */
+     * Date.now polyfill.
+     * @return {number} the current Date
+     */
     Date.now = function () {
         return new Date().getTime();
     };
@@ -524,9 +537,9 @@ for (var i = 0; i < vendors.length && !window.requestAnimationFrame; ++i) {
 if (/iP(ad|hone|od).*OS 6/.test(window.navigator.userAgent) || !window.requestAnimationFrame || !window.cancelAnimationFrame) {
     var lastTime = 0;
     /**
-   * requestAnimationFrame polyfill.
-   * @param  {!Function} callback the callback function.
-   */
+     * requestAnimationFrame polyfill.
+     * @param  {!Function} callback the callback function.
+     */
     window.requestAnimationFrame = function (callback) {
         var now = Date.now();
         var nextTime = Math.max(lastTime + 16, now);
@@ -1688,7 +1701,9 @@ MaterialRadio.prototype.onChange_ = function (event) {
         var button = radios[i].querySelector('.' + this.CssClasses_.RADIO_BTN);
         // Different name == different group, so no point updating those.
         if (button.getAttribute('name') === this.btnElement_.getAttribute('name')) {
-            radios[i]['MaterialRadio'].updateClasses_();
+            if (typeof radios[i]['MaterialRadio'] !== 'undefined') {
+                radios[i]['MaterialRadio'].updateClasses_();
+            }
         }
     }
 };
@@ -2717,13 +2732,15 @@ function MaterialTab(tab, ctx) {
             tab.appendChild(rippleContainer);
         }
         tab.addEventListener('click', function (e) {
-            e.preventDefault();
-            var href = tab.href.split('#')[1];
-            var panel = ctx.element_.querySelector('#' + href);
-            ctx.resetTabState_();
-            ctx.resetPanelState_();
-            tab.classList.add(ctx.CssClasses_.ACTIVE_CLASS);
-            panel.classList.add(ctx.CssClasses_.ACTIVE_CLASS);
+            if (tab.getAttribute('href').charAt(0) === '#') {
+                e.preventDefault();
+                var href = tab.href.split('#')[1];
+                var panel = ctx.element_.querySelector('#' + href);
+                ctx.resetTabState_();
+                ctx.resetPanelState_();
+                tab.classList.add(ctx.CssClasses_.ACTIVE_CLASS);
+                panel.classList.add(ctx.CssClasses_.ACTIVE_CLASS);
+            }
         });
     }
 }
@@ -3141,6 +3158,7 @@ componentHandler.register({
    */
 var MaterialLayout = function MaterialLayout(element) {
     this.element_ = element;
+    this.innerContainer_ = element.querySelector('.' + this.CssClasses_.INNER_CONTAINER);
     // Initialize instance.
     this.init();
 };
@@ -3191,7 +3209,7 @@ MaterialLayout.prototype.Mode_ = {
    * @private
    */
 MaterialLayout.prototype.CssClasses_ = {
-    CONTAINER: 'mdl-layout__container',
+    INNER_CONTAINER: 'mdl-layout__inner-container',
     HEADER: 'mdl-layout__header',
     DRAWER: 'mdl-layout__drawer',
     CONTENT: 'mdl-layout__content',
@@ -3212,6 +3230,7 @@ MaterialLayout.prototype.CssClasses_ = {
     TAB_BAR_BUTTON: 'mdl-layout__tab-bar-button',
     TAB_BAR_LEFT_BUTTON: 'mdl-layout__tab-bar-left-button',
     TAB_BAR_RIGHT_BUTTON: 'mdl-layout__tab-bar-right-button',
+    TAB_MANUAL_SWITCH: 'mdl-layout__tab-manual-switch',
     PANEL: 'mdl-layout__tab-panel',
     HAS_DRAWER: 'has-drawer',
     HAS_TABS: 'has-tabs',
@@ -3342,7 +3361,7 @@ MaterialLayout.prototype.resetPanelState_ = function (panels) {
   * @public
   */
 MaterialLayout.prototype.toggleDrawer = function () {
-    var drawerButton = this.element_.querySelector('.' + this.CssClasses_.DRAWER_BTN);
+    var drawerButton = this.innerContainer_.querySelector('.' + this.CssClasses_.DRAWER_BTN);
     this.drawer_.classList.toggle(this.CssClasses_.IS_DRAWER_OPEN);
     this.obfuscator_.classList.toggle(this.CssClasses_.IS_DRAWER_OPEN);
     // Set accessibility properties.
@@ -3360,16 +3379,11 @@ MaterialLayout.prototype['toggleDrawer'] = MaterialLayout.prototype.toggleDrawer
    */
 MaterialLayout.prototype.init = function () {
     if (this.element_) {
-        var container = document.createElement('div');
-        container.classList.add(this.CssClasses_.CONTAINER);
         var focusedElement = this.element_.querySelector(':focus');
-        this.element_.parentElement.insertBefore(container, this.element_);
-        this.element_.parentElement.removeChild(this.element_);
-        container.appendChild(this.element_);
         if (focusedElement) {
             focusedElement.focus();
         }
-        var directChildren = this.element_.childNodes;
+        var directChildren = this.innerContainer_.childNodes;
         var numChildren = directChildren.length;
         for (var c = 0; c < numChildren; c++) {
             var child = directChildren[c];
@@ -3387,9 +3401,9 @@ MaterialLayout.prototype.init = function () {
             if (e.persisted) {
                 // when page is loaded from back/forward cache
                 // trigger repaint to let layout scroll in safari
-                this.element_.style.overflowY = 'hidden';
+                this.innerContainer_.style.overflowY = 'hidden';
                 requestAnimationFrame(function () {
-                    this.element_.style.overflowY = '';
+                    this.innerContainer_.style.overflowY = '';
                 }.bind(this));
             }
         }.bind(this), false);
@@ -3406,7 +3420,7 @@ MaterialLayout.prototype.init = function () {
                 this.header_.addEventListener('click', this.headerClickHandler_.bind(this));
             } else if (this.header_.classList.contains(this.CssClasses_.HEADER_SCROLL)) {
                 mode = this.Mode_.SCROLL;
-                container.classList.add(this.CssClasses_.HAS_SCROLLING_HEADER);
+                this.element_.classList.add(this.CssClasses_.HAS_SCROLLING_HEADER);
             }
             if (mode === this.Mode_.STANDARD) {
                 this.header_.classList.add(this.CssClasses_.CASTING_SHADOW);
@@ -3428,7 +3442,7 @@ MaterialLayout.prototype.init = function () {
         }
         // Add drawer toggling button to our layout, if we have an openable drawer.
         if (this.drawer_) {
-            var drawerButton = this.element_.querySelector('.' + this.CssClasses_.DRAWER_BTN);
+            var drawerButton = this.innerContainer_.querySelector('.' + this.CssClasses_.DRAWER_BTN);
             if (!drawerButton) {
                 drawerButton = document.createElement('div');
                 drawerButton.setAttribute('aria-expanded', 'false');
@@ -3458,11 +3472,11 @@ MaterialLayout.prototype.init = function () {
             if (this.element_.classList.contains(this.CssClasses_.FIXED_HEADER)) {
                 this.header_.insertBefore(drawerButton, this.header_.firstChild);
             } else {
-                this.element_.insertBefore(drawerButton, this.content_);
+                this.innerContainer_.insertBefore(drawerButton, this.content_);
             }
             var obfuscator = document.createElement('div');
             obfuscator.classList.add(this.CssClasses_.OBFUSCATOR);
-            this.element_.appendChild(obfuscator);
+            this.innerContainer_.appendChild(obfuscator);
             obfuscator.addEventListener('click', this.drawerToggleHandler_.bind(this));
             this.obfuscator_ = obfuscator;
             this.drawer_.addEventListener('keydown', this.keyboardEventHandler_.bind(this));
@@ -3559,12 +3573,8 @@ function MaterialLayoutTab(tab, tabs, panels, layout) {
      * Auxiliary method to programmatically select a tab in the UI.
      */
     function selectTab() {
-        var href = tab.href.split('#')[1];
-        var panel = layout.content_.querySelector('#' + href);
         layout.resetTabState_(tabs);
-        layout.resetPanelState_(panels);
         tab.classList.add(layout.CssClasses_.IS_ACTIVE);
-        panel.classList.add(layout.CssClasses_.IS_ACTIVE);
     }
     if (layout.tabBar_.classList.contains(layout.CssClasses_.JS_RIPPLE_EFFECT)) {
         var rippleContainer = document.createElement('span');
@@ -3575,12 +3585,14 @@ function MaterialLayoutTab(tab, tabs, panels, layout) {
         rippleContainer.appendChild(ripple);
         tab.appendChild(rippleContainer);
     }
-    tab.addEventListener('click', function (e) {
-        if (tab.getAttribute('href').charAt(0) === '#') {
-            e.preventDefault();
-            selectTab();
-        }
-    });
+    if (!layout.tabBar_.classList.contains(layout.CssClasses_.TAB_MANUAL_SWITCH)) {
+        tab.addEventListener('click', function (e) {
+            if (tab.getAttribute('href').charAt(0) === '#') {
+                e.preventDefault();
+                selectTab();
+            }
+        });
+    }
     tab.show = selectTab;
 }
 window['MaterialLayoutTab'] = MaterialLayoutTab;
@@ -3841,8 +3853,8 @@ MaterialRipple.prototype.downHandler_ = function (event) {
             x = Math.round(bound.width / 2);
             y = Math.round(bound.height / 2);
         } else {
-            var clientX = event.clientX ? event.clientX : event.touches[0].clientX;
-            var clientY = event.clientY ? event.clientY : event.touches[0].clientY;
+            var clientX = event.clientX !== undefined ? event.clientX : event.touches[0].clientX;
+            var clientY = event.clientY !== undefined ? event.clientY : event.touches[0].clientY;
             x = Math.round(clientX - bound.left);
             y = Math.round(clientY - bound.top);
         }
