@@ -1,3 +1,5 @@
+if (typeof window === 'undefined') return;
+
 /**
  * @license
  * Copyright 2015 Google Inc. All Rights Reserved.
@@ -489,7 +491,6 @@ window.addEventListener('load', function() {
       'querySelector' in document &&
       'addEventListener' in window && Array.prototype.forEach) {
     document.documentElement.classList.add('mdl-js');
-    componentHandler.upgradeAllRegistered();
   } else {
     /**
      * Dummy function to avoid JS errors.
