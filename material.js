@@ -194,7 +194,7 @@ componentHandler = (function() {
 
       var elements = document.querySelectorAll('.' + optCssClass);
       for (var n = 0; n < elements.length; n++) {
-        upgradeElementInternal(elements[n], jsClass);
+        setTimeout(upgradeElementInternal.bind(null, elements[n], jsClass), 0);
       }
     }
   }
@@ -282,7 +282,7 @@ componentHandler = (function() {
     for (var i = 0, n = elements.length, element; i < n; i++) {
       element = elements[i];
       if (element instanceof HTMLElement) {
-        upgradeElementInternal(element);
+        setTimeout(upgradeElementInternal.bind(null, element), 0);
         if (element.children.length > 0) {
           upgradeElementsInternal(element.children);
         }
