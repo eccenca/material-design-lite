@@ -5,7 +5,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [Unreleased]
 
-TODO: add at least one Added, Changed, Deprecated, Removed, Fixed or Security section
+### Fixed
+- Slow initiation with `upgradeAllRegistered` and `upgradeDom` by wrapping individual calls in `setTimeout`
 
 ## [1.3.0-beta4] 2017-08-27
 

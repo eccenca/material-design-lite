@@ -16,6 +16,7 @@
 1. react-mdl requires a `1.2.1` build of material-design-lite with additional patches applied [\[1\]][1]. We however want to use the newer `1.3.0` version. This package applies the patches from react-mdl on the `1.3.0` version.
 2. material-design-lite does not use SASS-colors (See https://github.com/google/material-design-lite/issues/146). In this package we fix that
 3. material-design-lite comes with over 60MB of pre-generated CSS which is not needed if only SASS is used.
+4. material-design-lite init is really slow if iterating over large arrays of items. This package fixes this by wrapping upgradeElementInternal with `setTimout(..., 0)`
 
 ## Install
 
