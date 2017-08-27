@@ -45,3 +45,4 @@ gulpfile.js
 #END
 
 .temp
+react-mdl.patch
