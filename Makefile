@@ -1,6 +1,6 @@
 
 build: yarn
-	rm -rf dist/ src/ utils/
+	rm -rf src/ utils/
 	cp -r node_modules/material-design-lite/* .temp
 	git clean .temp -Xfd
 	cp -r .temp/* .

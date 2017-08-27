@@ -61,7 +61,7 @@ gulp.task('scripts', [], () => {
         .pipe($.if(/mdlComponentHandler\.js/, $.util.noop(), uniffe()))
         .pipe($.concat('material.js'))
         .pipe($.iife({useStrict: true}))
-        .pipe(gulp.dest('dist'))
+        .pipe(gulp.dest('./'))
 });
 
 // Replace mdl's string colors and unquotes with real sass colors
