@@ -5,7 +5,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [Unreleased]
 
-TODO: add at least one Added, Changed, Deprecated, Removed, Fixed or Security section
+### Changed
+- Moved compiled javascript to root folder
 
 ## [1.3.0-beta3] 2017-08-27
 
