@@ -28,6 +28,7 @@
    */
   var MaterialLayout = function MaterialLayout(element) {
     this.element_ = element;
+    this.innerContainer_ = element.querySelector('.' + this.CssClasses_.INNER_CONTAINER);
 
     // Initialize instance.
     this.init();
@@ -84,7 +85,7 @@
    * @private
    */
   MaterialLayout.prototype.CssClasses_ = {
-    CONTAINER: 'mdl-layout__container',
+    INNER_CONTAINER: 'mdl-layout__inner-container',
     HEADER: 'mdl-layout__header',
     DRAWER: 'mdl-layout__drawer',
     CONTENT: 'mdl-layout__content',
@@ -260,7 +261,7 @@
   * @public
   */
   MaterialLayout.prototype.toggleDrawer = function() {
-    var drawerButton = this.element_.querySelector('.' + this.CssClasses_.DRAWER_BTN);
+    var drawerButton = this.innerContainer_.querySelector('.' + this.CssClasses_.DRAWER_BTN);
     this.drawer_.classList.toggle(this.CssClasses_.IS_DRAWER_OPEN);
     this.obfuscator_.classList.toggle(this.CssClasses_.IS_DRAWER_OPEN);
 
@@ -281,20 +282,13 @@
    */
   MaterialLayout.prototype.init = function() {
     if (this.element_) {
-      var container = document.createElement('div');
-      container.classList.add(this.CssClasses_.CONTAINER);
-
       var focusedElement = this.element_.querySelector(':focus');
-
-      this.element_.parentElement.insertBefore(container, this.element_);
-      this.element_.parentElement.removeChild(this.element_);
-      container.appendChild(this.element_);
 
       if (focusedElement) {
         focusedElement.focus();
       }
 
-      var directChildren = this.element_.childNodes;
+      var directChildren = this.innerContainer_.childNodes;
       var numChildren = directChildren.length;
       for (var c = 0; c < numChildren; c++) {
         var child = directChildren[c];
@@ -317,9 +311,9 @@
       window.addEventListener('pageshow', function(e) {
         if (e.persisted) { // when page is loaded from back/forward cache
           // trigger repaint to let layout scroll in safari
-          this.element_.style.overflowY = 'hidden';
+          this.innerContainer_.style.overflowY = 'hidden';
           requestAnimationFrame(function() {
-            this.element_.style.overflowY = '';
+            this.innerContainer_.style.overflowY = '';
           }.bind(this));
         }
       }.bind(this), false);
@@ -343,7 +337,7 @@
         } else if (this.header_.classList.contains(
             this.CssClasses_.HEADER_SCROLL)) {
           mode = this.Mode_.SCROLL;
-          container.classList.add(this.CssClasses_.HAS_SCROLLING_HEADER);
+          this.element_.classList.add(this.CssClasses_.HAS_SCROLLING_HEADER);
         }
 
         if (mode === this.Mode_.STANDARD) {
@@ -368,7 +362,7 @@
 
       // Add drawer toggling button to our layout, if we have an openable drawer.
       if (this.drawer_) {
-        var drawerButton = this.element_.querySelector('.' +
+        var drawerButton = this.innerContainer_.querySelector('.' +
           this.CssClasses_.DRAWER_BTN);
         if (!drawerButton) {
           drawerButton = document.createElement('div');
@@ -407,12 +401,12 @@
         if (this.element_.classList.contains(this.CssClasses_.FIXED_HEADER)) {
           this.header_.insertBefore(drawerButton, this.header_.firstChild);
         } else {
-          this.element_.insertBefore(drawerButton, this.content_);
+          this.innerContainer_.insertBefore(drawerButton, this.content_);
         }
 
         var obfuscator = document.createElement('div');
         obfuscator.classList.add(this.CssClasses_.OBFUSCATOR);
-        this.element_.appendChild(obfuscator);
+        this.innerContainer_.appendChild(obfuscator);
         obfuscator.addEventListener('click',
             this.drawerToggleHandler_.bind(this));
         this.obfuscator_ = obfuscator;
@@ -530,12 +524,8 @@
      * Auxiliary method to programmatically select a tab in the UI.
      */
     function selectTab() {
-      var href = tab.href.split('#')[1];
-      var panel = layout.content_.querySelector('#' + href);
       layout.resetTabState_(tabs);
-      layout.resetPanelState_(panels);
       tab.classList.add(layout.CssClasses_.IS_ACTIVE);
-      panel.classList.add(layout.CssClasses_.IS_ACTIVE);
     }
 
     if (layout.tabBar_.classList.contains(
@@ -550,10 +540,8 @@
     }
 
     tab.addEventListener('click', function(e) {
-      if (tab.getAttribute('href').charAt(0) === '#') {
-        e.preventDefault();
-        selectTab();
-      }
+      e.preventDefault();
+      selectTab();
     });
 
     tab.show = selectTab;
