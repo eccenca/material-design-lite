@@ -69,7 +69,7 @@ gulp.task('colors', [], () => {
     return gulp.src('src/**/*.scss')
         // replace sass unquote with the real function
         .pipe($.replace(/unquote\("(.+)"\)/g, function(match, p1) {
-            return p1;
+            return p1.replace(/#\{(.+?)\}/g, '$1');
         }))
         // replace color strings with real sass colors
         .pipe($.replace(/"(\d{1,3},\d{1,3},\d{1,3})"/g, function(match, p1) {
