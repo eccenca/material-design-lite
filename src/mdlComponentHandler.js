@@ -16,7 +16,6 @@ if (typeof window === 'undefined') return;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 /**
  * A component handler interface using the revealing module design pattern.
  * More details on this design pattern here:
