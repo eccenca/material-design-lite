@@ -5,7 +5,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [Unreleased]
 
-TODO: add at least one Added, Changed, Deprecated, Removed, Fixed or Security section
+### Changed
+- base MDL was changed from the original MDL by Google to the fork by eccenca, providing better configuration options
 
 ## [1.3.0-beta5] 2017-08-27
 
