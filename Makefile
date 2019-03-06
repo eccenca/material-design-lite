@@ -1,7 +1,7 @@
 
 build: yarn
 	rm -rf src/ utils/
-	cp -r node_modules/material-design-lite/* .temp
+	cp -r node_modules/@eccenca/material-lite-one/* .temp
 	git clean .temp -Xfd
 	cp -r .temp/* .
 	git apply react-mdl.patch

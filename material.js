@@ -19,7 +19,6 @@ if (typeof window === 'undefined') return;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 /**
  * A component handler interface using the revealing module design pattern.
  * More details on this design pattern here:
@@ -1942,15 +1941,6 @@ MaterialSlider.prototype.onChange_ = function (event) {
     this.updateValueStyles_();
 };
 /**
-   * Handle mouseup on element.
-   *
-   * @param {Event} event The event that fired.
-   * @private
-   */
-MaterialSlider.prototype.onMouseUp_ = function (event) {
-    event.target.blur();
-};
-/**
    * Handle mousedown on container element.
    * This handler is purpose is to not require the use to click
    * exactly on the 2px slider element, as FireFox seems to be very
@@ -2064,11 +2054,9 @@ MaterialSlider.prototype.init = function () {
         }
         this.boundInputHandler = this.onInput_.bind(this);
         this.boundChangeHandler = this.onChange_.bind(this);
-        this.boundMouseUpHandler = this.onMouseUp_.bind(this);
         this.boundContainerMouseDownHandler = this.onContainerMouseDown_.bind(this);
         this.element_.addEventListener('input', this.boundInputHandler);
         this.element_.addEventListener('change', this.boundChangeHandler);
-        this.element_.addEventListener('mouseup', this.boundMouseUpHandler);
         this.element_.parentElement.addEventListener('mousedown', this.boundContainerMouseDownHandler);
         this.updateValueStyles_();
         this.element_.classList.add(this.CssClasses_.IS_UPGRADED);
@@ -2119,6 +2107,7 @@ var MaterialSnackbar = function MaterialSnackbar(element) {
     this.actionHandler_ = undefined;
     this.message_ = undefined;
     this.actionText_ = undefined;
+    this.timeoutID_ = undefined;
     this.queuedNotifications_ = [];
     this.setActionHidden_(true);
 };
@@ -2162,7 +2151,7 @@ MaterialSnackbar.prototype.displaySnackbar_ = function () {
     this.textElement_.textContent = this.message_;
     this.element_.classList.add(this.cssClasses_.ACTIVE);
     this.element_.setAttribute('aria-hidden', 'false');
-    setTimeout(this.cleanup_.bind(this), this.timeout_);
+    this.timeoutID_ = setTimeout(this.cleanup_.bind(this), this.timeout_);
 };
 /**
    * Show the snackbar.
@@ -2201,6 +2190,21 @@ MaterialSnackbar.prototype.showSnackbar = function (data) {
 };
 MaterialSnackbar.prototype['showSnackbar'] = MaterialSnackbar.prototype.showSnackbar;
 /**
+   * Hide the snackbar.
+   *
+   * @public
+   */
+MaterialSnackbar.prototype.hideSnackbar = function () {
+    if (!this.active) {
+        return;
+    }
+    if (typeof this.timeoutID_ === 'number') {
+        clearTimeout(this.timeoutID_);
+        this.cleanup_();
+    }
+};
+MaterialSnackbar.prototype['hideSnackbar'] = MaterialSnackbar.prototype.hideSnackbar;
+/**
    * Check if the queue has items within it.
    * If it does, display the next entry.
    *
@@ -2229,6 +2233,7 @@ MaterialSnackbar.prototype.cleanup_ = function () {
         this.actionHandler_ = undefined;
         this.message_ = undefined;
         this.actionText_ = undefined;
+        this.timeoutID_ = undefined;
         this.active = false;
         this.checkQueue_();
     }.bind(this), this.Constant_.ANIMATION_LENGTH);
@@ -2706,6 +2711,23 @@ MaterialTabs.prototype.resetPanelState_ = function () {
     }
 };
 /**
+   * Set the active tab.
+   *
+   * @public
+   * @param {Element|number} tab The tab element or index to set active.
+   */
+MaterialTabs.prototype.setTab = function (tab) {
+    tab = typeof tab === 'number' ? this.tabs_[tab] : tab;
+    if (tab && tab.getAttribute('href').charAt(0) === '#') {
+        var href = tab.href.split('#')[1];
+        var panel = this.element_.querySelector('#' + href);
+        this.resetTabState_();
+        this.resetPanelState_();
+        tab.classList.add(this.CssClasses_.ACTIVE_CLASS);
+        panel.classList.add(this.CssClasses_.ACTIVE_CLASS);
+    }
+};
+/**
    * Initialize element.
    */
 MaterialTabs.prototype.init = function () {
@@ -2734,12 +2756,7 @@ function MaterialTab(tab, ctx) {
         tab.addEventListener('click', function (e) {
             if (tab.getAttribute('href').charAt(0) === '#') {
                 e.preventDefault();
-                var href = tab.href.split('#')[1];
-                var panel = ctx.element_.querySelector('#' + href);
-                ctx.resetTabState_();
-                ctx.resetPanelState_();
-                tab.classList.add(ctx.CssClasses_.ACTIVE_CLASS);
-                panel.classList.add(ctx.CssClasses_.ACTIVE_CLASS);
+                ctx.setTab(tab);
             }
         });
     }
@@ -2910,7 +2927,7 @@ MaterialTextfield.prototype['checkValidity'] = MaterialTextfield.prototype.check
    * @public
    */
 MaterialTextfield.prototype.checkDirty = function () {
-    if (this.input_.value && this.input_.value.length > 0) {
+    if (this.input_.value && this.input_.value.length > 0 || this.input_.placeholder.trim() !== '') {
         this.element_.classList.add(this.CssClasses_.IS_DIRTY);
     } else {
         this.element_.classList.remove(this.CssClasses_.IS_DIRTY);
@@ -3223,6 +3240,7 @@ MaterialLayout.prototype.CssClasses_ = {
     HEADER_WATERFALL: 'mdl-layout__header--waterfall',
     HEADER_SCROLL: 'mdl-layout__header--scroll',
     FIXED_HEADER: 'mdl-layout--fixed-header',
+    FIXED_DRAWER: 'mdl-layout--fixed-drawer',
     OBFUSCATOR: 'mdl-layout__obfuscator',
     TAB_BAR: 'mdl-layout__tab-bar',
     TAB_CONTAINER: 'mdl-layout__tab-bar-container',
@@ -3244,6 +3262,16 @@ MaterialLayout.prototype.CssClasses_ = {
     IS_ANIMATING: 'is-animating',
     ON_LARGE_SCREEN: 'mdl-layout--large-screen-only',
     ON_SMALL_SCREEN: 'mdl-layout--small-screen-only'
+};
+/**
+   * Provide local version of matchMedia. This is needed in order to support
+   * monkey-patching of matchMedia in the unit tests. Due to peculiarities in
+   * PhantomJS, it doesn't work to monkey patch window.matchMedia directly.
+   *
+   * @private
+   */
+MaterialLayout.prototype.matchMedia_ = function (query) {
+    return window.matchMedia(query);
 };
 /**
    * Handles scrolling on the content.
@@ -3289,12 +3317,18 @@ MaterialLayout.prototype.keyboardEventHandler_ = function (evt) {
 MaterialLayout.prototype.screenSizeHandler_ = function () {
     if (this.screenSizeMediaQuery_.matches) {
         this.element_.classList.add(this.CssClasses_.IS_SMALL_SCREEN);
+        if (this.drawer_) {
+            this.drawer_.setAttribute('aria-hidden', 'true');
+        }
     } else {
         this.element_.classList.remove(this.CssClasses_.IS_SMALL_SCREEN);
         // Collapse drawer (if any) when moving to a large screen size.
         if (this.drawer_) {
             this.drawer_.classList.remove(this.CssClasses_.IS_DRAWER_OPEN);
             this.obfuscator_.classList.remove(this.CssClasses_.IS_DRAWER_OPEN);
+            if (this.element_.classList.contains(this.CssClasses_.FIXED_DRAWER)) {
+                this.drawer_.setAttribute('aria-hidden', 'false');
+            }
         }
     }
 };
@@ -3484,7 +3518,7 @@ MaterialLayout.prototype.init = function () {
         }
         // Keep an eye on screen size, and add/remove auxiliary class for styling
         // of small screens.
-        this.screenSizeMediaQuery_ = window.matchMedia(this.Constant_.MAX_WIDTH);
+        this.screenSizeMediaQuery_ = this.matchMedia_(this.Constant_.MAX_WIDTH);
         this.screenSizeMediaQuery_.addListener(this.screenSizeHandler_.bind(this));
         this.screenSizeHandler_();
         // Initialize tabs, if any.
@@ -3671,6 +3705,9 @@ MaterialDataTable.prototype.selectRow_ = function (checkbox, row, opt_rows) {
                 row.classList.add(this.CssClasses_.IS_SELECTED);
             } else {
                 row.classList.remove(this.CssClasses_.IS_SELECTED);
+                if (this.headerCheckbox['MaterialCheckbox'].inputElement_.checked) {
+                    this.headerCheckbox['MaterialCheckbox'].uncheck();
+                }
             }
         }.bind(this);
     }
@@ -3735,8 +3772,8 @@ MaterialDataTable.prototype.init = function () {
         var rows = bodyRows.concat(footRows);
         if (this.element_.classList.contains(this.CssClasses_.SELECTABLE)) {
             var th = document.createElement('th');
-            var headerCheckbox = this.createCheckbox_(null, rows);
-            th.appendChild(headerCheckbox);
+            this.headerCheckbox = this.createCheckbox_(null, rows);
+            th.appendChild(this.headerCheckbox);
             firstHeader.parentElement.insertBefore(th, firstHeader);
             for (var i = 0; i < rows.length; i++) {
                 var firstCell = rows[i].querySelector('td');
