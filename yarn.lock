@@ -2,6 +2,10 @@
 # yarn lockfile v1
 
 
+"@eccenca/material-lite-one@eccenca/material-lite-one#v2.0.0":
+  version "2.0.0"
+  resolved "https://codeload.github.com/eccenca/material-lite-one/tar.gz/06e5c68bb2076f808dc84b78aede249f2df91318"
+
 acorn@^5.1.1:
   version "5.7.3"
   resolved "https://artifactory.eccenca.com/api/npm/npm/acorn/-/acorn-5.7.3.tgz#67aa231bf8812974b85235a96771eb6bd07ea279"
@@ -847,10 +851,6 @@ lru-cache@2:
 map-cache@^0.2.0:
   version "0.2.2"
   resolved "https://registry.yarnpkg.com/map-cache/-/map-cache-0.2.2.tgz#c32abd0bd6525d9b051645bb4f26ac5dc98a0dbf"
-
-material-design-lite@^1.3.0:
-  version "1.3.0"
-  resolved "https://registry.yarnpkg.com/material-design-lite/-/material-design-lite-1.3.0.tgz#d004ce3fee99a1eeb74a78b8a325134a5f1171d3"
 
 merge-stream@^1.0.0:
   version "1.0.1"
